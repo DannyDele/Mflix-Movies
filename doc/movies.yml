@@ -3,9 +3,6 @@ info:
   title: Mflix Movies API
   version: 1.0.0
   description: API documentation for Movies endpoints in Mflix project.
-servers:
-  - url: http://localhost:8080
-    description: process.env.NODE_ENV === "production" ? "Production server" : "Local server",
 
 paths:
   /movies:
