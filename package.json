@@ -1,21 +1,28 @@
 {
-  "name": "mono-database",
+  "name": "Mflix Movie Database",
   "version": "1.0.0",
-  "description": "mono-database",
+  "description": "Mflix Movie Database",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
+    "start": "set NODE_ENV=production&& node server.js",
+    "dev": "set NODE_ENV=development&& nodemon server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
-  "author": "",
+  "author": "Daniel Ogbodo",
   "license": "ISC",
   "dependencies": {
     "cors": "^2.8.5",
+    "dotenv": "^17.2.2",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
     "method-override": "^3.0.0",
-    "mongoose": "^8.3.3"
+    "mongoose": "^8.3.3",
+    "nodemon": "^3.1.10",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0"
+  },
+  "devDependencies": {
+    "cross-env": "^10.0.0"
   }
 }

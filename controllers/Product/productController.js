@@ -6,6 +6,19 @@ const handleAsync = require('../../utils/ErrorHandlers/HandleAsync');
 
 
 
+// const generateCustomIds = (prefix, year, count = 50) => {
+//     const ids = [];
+//     for (let i = 0; i < count; i++) {
+//         const randomNumber = Math.floor(10000000 + Math.random() * 90000000);
+//         ids.push(`${prefix}-${randomNumber}-${year}`);
+//     }
+//     return ids;
+// };
+
+
+
+
+
 
 // Funtion to find all products
 
@@ -103,6 +116,7 @@ const addProduct = handleAsync(async (req, res) => {
         boughtBy,
         year,
         collections,
+        productId
     } = req.body;
 
     console.log('Data coming from the frontend:', req.body);
@@ -113,24 +127,22 @@ const addProduct = handleAsync(async (req, res) => {
             return res.status(404).json({ msg: 'Collection not found or does not exist' });
         }
 
-        // Generate a 3-character prefix from the collection name
-        const collectionNameAbbreviation = foundCollection.name.substring(0, 3).toUpperCase();
+      const foundProductWithThesameId = await Product.findOne({ productId });
 
-        // Generate an 8-digit random number
-        const randomNumber = Math.floor(10000000 + Math.random() * 90000000);
+        if (foundProductWithThesameId) {
+    return res.status(409).json({ msg: 'Product with that ID has already been chosen' });
+}
 
-        // Combine parts to form the product ID
-        const productId = `${collectionNameAbbreviation}-${randomNumber}-${year}`;
 
-        // Create a new product with the generated product ID
+        // Create a new product with the generated IDs
         const newProduct = new Product({
             productId,
             name,
             price,
             boughtBy,
             year,
-            collections: foundCollection.collectionId, // Ensure collectionId is stored
-            date: new Date() // Automatically set the current date
+            collections: foundCollection.collectionId,
+            date: new Date()
         });
 
         // Generate the custom URL
@@ -150,6 +162,7 @@ const addProduct = handleAsync(async (req, res) => {
         res.status(500).json({ error: 'Error adding product', details: error });
     }
 });
+    
 
 
 

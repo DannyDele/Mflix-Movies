@@ -1,0 +1,413 @@
+openapi: 3.0.3
+info:
+  title: Mflix Movies API
+  version: 1.0.0
+  description: API documentation for Movies endpoints in Mflix project.
+servers:
+  - url: http://localhost:8080
+    description: process.env.NODE_ENV === "production" ? "Production server" : "Local server",
+
+paths:
+  /movies:
+    get:
+      summary: Get movies
+      description: Returns a paginated list of movies. Supports case-insensitive title filtering.
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+            default: 10
+          description: Number of items per page
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          description: Page number (1-based)
+        - in: query
+          name: title
+          schema:
+            type: string
+          description: Case-insensitive substring match on movie title
+      responses:
+        "200":
+          description: A list of movies
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  count:
+                    type: integer
+                  data:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Movie"
+              examples:
+                sample:
+                  value:
+                    status: success
+                    count: 10
+                    data:
+                      - _id: 573a1390f29313caabcd42e8
+                        plot: A group of criminals stage a brazen train hold-up, only to find a determined posse hot on their heels.
+                        genres: ["Short", "Western"]
+                        runtime: 11
+                        cast:
+                          - A.C. Abadie
+                          - "Gilbert M. 'Broncho Billy' Anderson"
+                          - George Barnes
+                          - Justus D. Barnes
+                        poster: https://m.media-amazon.com/images/M/MV5BMTU3NjE5NzYtYTYyNS00MDVmLWIwYjgtMmYwYWIxZDYyNzU2XkEyXkFqcGdeQXVyNzQzNzQxNzI@._V1_SY1000_SX677_AL_.jpg
+                        title: The Great Train Robbery
+                        fullplot: Among the earliest existing films in American cinema - notable as the first film that presented a narrative story to tell - it depicts a group of cowboy outlaws who hold up a train and rob the passengers. They are then pursued by a Sheriff's posse. Several scenes have color included - all hand tinted.
+                        languages: ["English"]
+                        released: 1903-12-01T00:00:00.000Z
+                        directors: ["Edwin S. Porter"]
+                        rated: TV-G
+                        awards:
+                          wins: 1
+                          nominations: 0
+                          text: 1 win.
+                        lastupdated: 2015-08-13 00:27:59.177000000
+                        year: 1903
+                        imdb:
+                          rating: 7.4
+                          votes: 9847
+                          id: 439
+                        countries: ["USA"]
+                        type: movie
+                        tomatoes:
+                          viewer:
+                            rating: 3.7
+                            numReviews: 2559
+                            meter: 75
+                          fresh: 6
+                          critic:
+                            rating: 7.6
+                            numReviews: 6
+                            meter: 100
+                          rotten: 0
+                          lastUpdated: 2015-08-08T19:16:10.000Z
+                        num_mflix_comments: 0
+    post:
+      summary: Create a movie
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieCreateDTO"
+      responses:
+        "201":
+          description: Movie created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: "#/components/schemas/Movie"
+  /movies/{id}:
+    get:
+      summary: Get a movie by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: MongoDB ObjectId
+      responses:
+        "200":
+          description: Movie found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: "#/components/schemas/Movie"
+        "400":
+          description: Invalid movie ID
+        "404":
+          description: Movie not found
+    put:
+      summary: Replace a movie by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieReplaceDTO"
+      responses:
+        "200":
+          description: Movie replaced
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: "#/components/schemas/Movie"
+        "400":
+          description: Invalid movie ID
+        "404":
+          description: Movie not found
+    patch:
+      summary: Update a movie by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MovieUpdateDTO"
+      responses:
+        "200":
+          description: Movie updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: success
+                  data:
+                    $ref: "#/components/schemas/Movie"
+        "400":
+          description: Invalid movie ID
+        "404":
+          description: Movie not found
+    delete:
+      summary: Delete a movie by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Movie deleted
+        "400":
+          description: Invalid movie ID
+        "404":
+          description: Movie not found
+components:
+  schemas:
+    Movie:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: MongoDB ObjectId
+          example: 573a1390f29313caabcd42e8
+        title:
+          type: string
+          example: The Great Train Robbery
+        plot:
+          type: string
+          example: A group of criminals stage a brazen train hold-up, only to find a determined posse hot on their heels.
+        fullplot:
+          type: string
+          example: Among the earliest existing films in American cinema...
+        genres:
+          type: array
+          items:
+            type: string
+          example: ["Short", "Western"]
+        runtime:
+          type: integer
+          example: 11
+        cast:
+          type: array
+          items:
+            type: string
+          example:
+            - A.C. Abadie
+            - "Gilbert M. 'Broncho Billy' Anderson"
+            - George Barnes
+            - Justus D. Barnes
+        poster:
+          type: string
+          format: uri
+        languages:
+          type: array
+          items:
+            type: string
+          example: ["English"]
+        released:
+          type: string
+          format: date-time
+          example: 1903-12-01T00:00:00.000Z
+        directors:
+          type: array
+          items:
+            type: string
+          example: ["Edwin S. Porter"]
+        rated:
+          type: string
+          example: TV-G
+        awards:
+          $ref: "#/components/schemas/Awards"
+        lastupdated:
+          type: string
+          example: 2015-08-13 00:27:59.177000000
+        year:
+          type: integer
+          example: 1903
+        imdb:
+          $ref: "#/components/schemas/Imdb"
+        countries:
+          type: array
+          items:
+            type: string
+          example: ["USA"]
+        type:
+          type: string
+          example: movie
+        tomatoes:
+          $ref: "#/components/schemas/Tomatoes"
+        num_mflix_comments:
+          type: integer
+          example: 0
+    Awards:
+      type: object
+      properties:
+        wins:
+          type: integer
+        nominations:
+          type: integer
+        text:
+          type: string
+    Imdb:
+      type: object
+      properties:
+        rating:
+          type: number
+        votes:
+          type: integer
+        id:
+          type: integer
+    Tomatoes:
+      type: object
+      properties:
+        viewer:
+          $ref: "#/components/schemas/TomatoesViewer"
+        fresh:
+          type: integer
+        critic:
+          $ref: "#/components/schemas/TomatoesCritic"
+        rotten:
+          type: integer
+        lastUpdated:
+          type: string
+          format: date-time
+    TomatoesViewer:
+      type: object
+      properties:
+        rating:
+          type: number
+        numReviews:
+          type: integer
+        meter:
+          type: integer
+    TomatoesCritic:
+      type: object
+      properties:
+        rating:
+          type: number
+        numReviews:
+          type: integer
+        meter:
+          type: integer
+    MovieCreateDTO:
+      type: object
+      description: DTO for creating a movie. At minimum include a title; other fields are optional.
+      properties:
+        title:
+          type: string
+        plot:
+          type: string
+        fullplot:
+          type: string
+        genres:
+          type: array
+          items:
+            type: string
+        runtime:
+          type: integer
+        cast:
+          type: array
+          items:
+            type: string
+        poster:
+          type: string
+          format: uri
+        languages:
+          type: array
+          items:
+            type: string
+        released:
+          type: string
+          format: date-time
+        directors:
+          type: array
+          items:
+            type: string
+        rated:
+          type: string
+        awards:
+          $ref: "#/components/schemas/Awards"
+        year:
+          type: integer
+        imdb:
+          $ref: "#/components/schemas/Imdb"
+        countries:
+          type: array
+          items:
+            type: string
+        type:
+          type: string
+        tomatoes:
+          $ref: "#/components/schemas/Tomatoes"
+      required:
+        - title
+    MovieReplaceDTO:
+      type: object
+      description: DTO for replacing a movie (PUT). Should provide the full resource. At minimum include a title.
+      allOf:
+        - $ref: "#/components/schemas/MovieCreateDTO"
+    MovieUpdateDTO:
+      type: object
+      description: DTO for partially updating a movie (PATCH). All fields optional.
+      allOf:
+        - $ref: "#/components/schemas/MovieCreateDTO"

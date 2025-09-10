@@ -1,5 +1,6 @@
 const Collection = require('../../model/collection');
 const Product = require('../../model/product');
+const CustomId = require('../../model/customId');
 const handleAsync = require('../../utils/ErrorHandlers/HandleAsync');
 
 
@@ -34,7 +35,7 @@ const getCollection = handleAsync(async (req, res) => {
         const { id } = req.params;
         const foundCollection = await Collection.findOne({ collectionId: id })
 
-        console.log('Found Collection:', foundCollection);
+        console.log('Found Collection Ids:', foundCollection.customIds);
 
         if (!foundCollection) {
             return res.status(404).json({ msg: 'Collection not found or does not exist' });
@@ -52,28 +53,51 @@ const getCollection = handleAsync(async (req, res) => {
 
 
 
-// Controller function to create a new collection
+
+// Controller function to create a new collection with unique IDs
 const addCollection = handleAsync(async (req, res) => {
     try {
-        const { name, description, collectiontype, volume, year } = req.body;
+        const { name, description, collectiontype, volume, year, numCustomIds } = req.body;
+
+        // Validate numCustomIds
+        if (!numCustomIds || numCustomIds <= 0) {
+            return res.status(400).json({ msg: 'Invalid number of custom IDs requested' });
+        }
 
         // Generate a 3-character prefix from the collection name
         const collectionNameAbbreviation = name.substring(0, 3).toUpperCase();
 
-        // Generate an 8-digit random number
+        // Generate an 8-digit random number for collectionId
         const randomNumber = Math.floor(10000000 + Math.random() * 90000000);
-
-        // Combine parts to form the collection ID
         const collectionId = `${collectionNameAbbreviation}-${randomNumber}-${year}`;
 
-        // Create a new collection with the generated collection ID
+        // Generate unique custom IDs
+        const generateUniqueId = () => {
+            const randomNum = Math.floor(10000000 + Math.random() * 90000000);
+            return `${collectionNameAbbreviation}-${randomNum}-${year}`;
+        };
+
+        const customIds = new Set();
+        while (customIds.size < numCustomIds) {
+            customIds.add(generateUniqueId());
+        }
+
+        const customIdArray = Array.from(customIds);
+
+        // Create and save new CustomId documents
+        const customIdDocs = customIdArray.map(id => ({ customId: id, collection: collectionId }));
+        await CustomId.insertMany(customIdDocs);
+
+        // Create a new collection with the generated collection ID and custom IDs
         const newCollection = new Collection({
             collectionId,
             name,
             description,
             collectiontype,
             volume,
-            year
+            year,
+            numCustomIds,  // Set the number of custom IDs
+            customIds: customIdArray
         });
 
         await newCollection.save();
@@ -92,20 +116,31 @@ const addCollection = handleAsync(async (req, res) => {
 const deleteById = handleAsync(async (req, res) => {
     try {
         const { collectionId } = req.params;
-        const collection = await Collection.findOne({ collectionId});
+
+        // Find the collection by its ID
+        const collection = await Collection.findOne({ collectionId });
 
         if (!collection) {
             return res.status(404).json({ msg: 'Collection not found or does not exist' });
         }
 
-        await collection.deleteOne();
+        // Get product IDs associated with the collection
+        const productIds = collection.products;
 
-        res.status(200).json({ msg: 'Collection deleted successfully', deletedCollection: collection });
+        // Delete the products associated with the collection
+        await Product.deleteMany({ productId: { $in: productIds } });
+
+        // Delete the collection itself
+        await Collection.deleteOne({ collectionId });
+
+        res.status(200).json({ msg: 'Collection and associated products deleted successfully', deletedCollection: collection });
     } catch (error) {
-        console.error('Error deleting collection', error);
-        res.status(500).json({ error: 'Error deleting collection', details: error });
+        console.error('Error deleting collection and products', error);
+        res.status(500).json({ error: 'Error deleting collection and products', details: error });
     }
 });
+
+
 
 
 

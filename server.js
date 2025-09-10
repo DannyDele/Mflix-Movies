@@ -1,76 +1,81 @@
+const path = require("path");
+const dotenv = require("dotenv");
 
-var bodyParser = require('body-parser');
-const express = require('express');
+const envFile = `.env.${process.env.NODE_ENV || "development"}`;
+console.log("Loading env file:", envFile);
+
+dotenv.config({ path: envFile });
+
+// fallback if still missing
+if (!process.env.MONGO_URI) {
+  dotenv.config({ path: ".env" });
+}
+
+var bodyParser = require("body-parser");
+const express = require("express");
 const app = express();
-const mongoose = require('mongoose');
-const ejs = require('ejs');
-const path = require('path')
-const methodOverride = require('method-override');
-const cors = require('cors');  // Import cors
+const mongoose = require("mongoose");
+const ejs = require("ejs");
+const methodOverride = require("method-override");
+const cors = require("cors");
+const swaggerUi = require("swagger-ui-express");
+const YAML = require("yamljs");
+const swaggerBaseConfig = require("./config/swagger");
 
-
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 
 // route imports
-const productRoute = require('./routes/Product/productRoute');
-const collectionRoute = require('./routes/Collection/collectionRoute');
+const movieRoute = require("./routes/movie"); // <-- added
 
+app.set("view engine", "ejs");
+app.use(express.static("public"));
+app.set("views", path.join(__dirname, "/views"));
 
-
-
-
-
-app.set('view engine', 'ejs');
-app.use(express.static('public'))
-app.set('views', path.join(__dirname, '/views'));
-
-//set up bodyparser
-app.use(bodyParser.urlencoded({extended: true})) 
-app.use(bodyParser.json()) 
+// set up bodyparser
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 app.use(express.json());
-app.use(methodOverride('_method'));
-
+app.use(methodOverride("_method"));
 
 // Enable CORS
 app.use(cors());
 
+// Swagger setup
+const moviesSpec = YAML.load(path.join(__dirname, "doc", "movies.yml"));
+const mergedSpec = {
+  ...moviesSpec,
+  openapi: swaggerBaseConfig.openapi || moviesSpec.openapi,
+  info: swaggerBaseConfig.info || moviesSpec.info,
+  servers: swaggerBaseConfig.servers || moviesSpec.servers,
+};
+app.use(
+  "/api-docs",
+  swaggerUi.serve,
+  swaggerUi.setup(mergedSpec, { customSiteTitle: "Mflix Movies API Docs" })
+);
 
-// LOCAL_CONN_STR
+// Database connection
 async function connectToDatabase() {
   try {
-    await mongoose.connect('mongodb://127.0.0.1:27017/mono');
-    console.log('MongoDB database Connection Established Successfully!!');
+    await mongoose.connect(process.env.MONGO_URI);
+    console.log("MongoDB database Connection Established Successfully!!");
   } catch (error) {
-    console.error('MongoDB database Connection Failed:', error);
+    console.error("MongoDB database Connection Failed:", error);
   }
 }
-
-// Call the function to establish the connection
 connectToDatabase();
 
-
-
-// app.use('/', (req, res) => {
-//     res.send('MaryDivine Server Started!!')
-// })
-
-
 // routes
-app.use('/', productRoute);
-app.use('/', collectionRoute)
 
-
-
-
-
+app.use("/", movieRoute); // <-- added
 
 // Error Handle Middleware
 app.use((err, req, res, next) => {
-  const { message = 'something went wrong', status = 500 } = err;
+  const { message = "something went wrong", status = 500 } = err;
   res.status(status).send({ msg: message });
-  console.log(err)
+  console.log(err);
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on port: ${PORT} `)
-})
+  console.log(`Server running on port: ${PORT} `);
+});
