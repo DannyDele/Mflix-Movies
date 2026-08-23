@@ -1,25 +1,31 @@
 {
-  "name": "Mflix Movie Database",
+  "name": "ecommerce-admin-api",
   "version": "1.0.0",
-  "description": "Mflix Movie Database",
+  "description": "Ecommerce Admin Dashboard REST API",
   "main": "server.js",
   "scripts": {
     "start": "set NODE_ENV=production&& node server.js",
     "dev": "set NODE_ENV=development&& nodemon server.js",
+    "seed": "set NODE_ENV=development&& node scripts/seed.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "Daniel Ogbodo",
   "license": "ISC",
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "ejs": "^3.1.10",
     "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.3",
     "method-override": "^3.0.0",
     "mongoose": "^8.3.3",
+    "multer": "^2.2.0",
     "nodemon": "^3.1.10",
     "swagger-ui-express": "^5.0.1",
+    "uuid": "^14.0.2",
     "yamljs": "^0.3.0"
   },
   "devDependencies": {

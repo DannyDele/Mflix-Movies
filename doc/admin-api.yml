@@ -1,0 +1,2145 @@
+openapi: 3.0.3
+info:
+  title: 'Ecommerce Admin API'
+  description: 'Admin dashboard API. Login sets httpOnly cookies — use credentials include on the frontend.'
+  version: 1.0.0
+servers:
+  -
+    url: 'http://localhost:8080'
+    description: Local
+tags:
+  -
+    name: Auth
+  -
+    name: Dashboard
+  -
+    name: Orders
+  -
+    name: Products
+  -
+    name: Customers
+  -
+    name: Inventory
+  -
+    name: Discounts
+  -
+    name: Reviews
+  -
+    name: Analytics
+  -
+    name: Notifications
+  -
+    name: Settings
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+        data: {}
+        meta:
+          $ref: '#/components/schemas/PaginationMeta'
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+    PaginationMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          example: admin@store.com
+        password:
+          type: string
+          example: Admin@123
+    LoginResponse:
+      type: object
+      properties:
+        user:
+          $ref: '#/components/schemas/AdminUser'
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+    AdminUser:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        isSuperAdmin:
+          type: boolean
+        isAdmin:
+          type: boolean
+        permissions:
+          type: array
+          items:
+            type: string
+          example:
+            - 'dashboard:view'
+            - 'orders:view'
+            - 'orders:manage'
+        avatar:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        twoFactorEnabled:
+          type: boolean
+    Product:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        sku:
+          type: string
+        category:
+          type: string
+        price:
+          type: number
+        compareAtPrice:
+          type: number
+          nullable: true
+        stock:
+          type: integer
+        lowStockThreshold:
+          type: integer
+        tags:
+          type: array
+          items:
+            type: string
+        images:
+          type: array
+          items:
+            type: string
+        variants:
+          type: array
+          items:
+            type: object
+            properties:
+              size:
+                type: string
+              color:
+                type: string
+              sku:
+                type: string
+              stock:
+                type: integer
+              price:
+                type: number
+                nullable: true
+        status:
+          type: string
+          enum:
+            - active
+            - draft
+            - out_of_stock
+        totalSold:
+          type: integer
+    Order:
+      type: object
+      properties:
+        _id:
+          type: string
+        orderNumber:
+          type: string
+        customerId:
+          type: string
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+        itemCount:
+          type: integer
+        subtotal:
+          type: number
+        tax:
+          type: number
+        shipping:
+          type: number
+        discount:
+          type: number
+        total:
+          type: number
+        paymentStatus:
+          type: string
+          enum:
+            - pending
+            - paid
+            - failed
+            - refunded
+            - partially_refunded
+        fulfillmentStatus:
+          type: string
+          enum:
+            - pending
+            - processing
+            - shipped
+            - delivered
+            - cancelled
+            - refunded
+        paymentMethod:
+          type: string
+        timeline:
+          type: array
+          items:
+            type: object
+    Customer:
+      type: object
+      properties:
+        _id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        status:
+          type: string
+          enum:
+            - active
+            - blocked
+        totalOrders:
+          type: integer
+        totalSpent:
+          type: number
+        addresses:
+          type: array
+          items:
+            type: object
+    Coupon:
+      type: object
+      properties:
+        _id:
+          type: string
+        code:
+          type: string
+        type:
+          type: string
+          enum:
+            - percentage
+            - flat
+        value:
+          type: number
+        usageLimit:
+          type: integer
+          nullable: true
+        usageCount:
+          type: integer
+        minOrderAmount:
+          type: number
+        startsAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum:
+            - active
+            - expired
+            - scheduled
+    Review:
+      type: object
+      properties:
+        _id:
+          type: string
+        productId:
+          type: string
+        productName:
+          type: string
+        customerId:
+          type: string
+        customerName:
+          type: string
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - published
+            - flagged
+            - rejected
+    PaginationQuery:
+      type: object
+      properties:
+        page:
+          type: integer
+          default: 1
+        limit:
+          type: integer
+          default: 20
+        sortBy:
+          type: string
+          default: createdAt
+        sortOrder:
+          type: string
+          enum:
+            - asc
+            - desc
+          default: desc
+        search:
+          type: string
+    CreateAdminRequest:
+      type: object
+      required:
+        - name
+        - email
+        - password
+      properties:
+        name:
+          type: string
+          example: 'Maya Chen'
+        email:
+          type: string
+          example: maya@store.com
+        password:
+          type: string
+          minLength: 6
+          example: SecurePass1
+        isSuperAdmin:
+          type: boolean
+          example: false
+        isAdmin:
+          type: boolean
+          example: true
+        permissions:
+          type: array
+          items:
+            type: string
+          example:
+            - 'dashboard:view'
+            - 'orders:view'
+            - 'products:manage'
+security:
+  -
+    bearerAuth: []
+paths:
+  /health:
+    get:
+      tags:
+        - Auth
+      summary: 'Health check'
+      security: []
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/auth/login:
+    post:
+      tags:
+        - Auth
+      summary: Login
+      description: 'Sets cookies and returns accessToken + refreshToken for Swagger.'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success: {type: boolean}
+                  message: {type: string}
+                  data: {$ref: '#/components/schemas/LoginResponse'}
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/admin/auth/refresh:
+    post:
+      tags:
+        - Auth
+      summary: 'Refresh tokens'
+      security: []
+      responses:
+        '200':
+          description: OK
+        '401':
+          description: Unauthorized
+  /api/v1/admin/auth/logout:
+    post:
+      tags:
+        - Auth
+      summary: Logout
+      security: []
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/auth/me:
+    get:
+      tags:
+        - Auth
+      summary: 'Current user'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+  /api/v1/admin/auth/change-password:
+    patch:
+      tags:
+        - Auth
+      summary: 'Change password'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - currentPassword
+                - newPassword
+              properties:
+                currentPassword:
+                  type: string
+                newPassword:
+                  type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/auth/two-factor:
+    patch:
+      tags:
+        - Auth
+      summary: 'Toggle 2FA'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - enabled
+              properties:
+                enabled:
+                  type: boolean
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/auth/permissions:
+    get:
+      tags:
+        - Auth
+      summary: 'List permissions'
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/auth/admins:
+    get:
+      tags:
+        - Auth
+      summary: 'List admins'
+      responses:
+        '200':
+          description: OK
+    post:
+      tags:
+        - Auth
+      summary: 'Create admin'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAdminRequest'
+      responses:
+        '201':
+          description: Created
+        '403':
+          description: Forbidden
+        '409':
+          description: Conflict
+      description: 'Super admin only. Open if no admins exist yet.'
+  '/api/v1/admin/auth/admins/{id}':
+    patch:
+      tags:
+        - Auth
+      summary: 'Update admin'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                isSuperAdmin:
+                  type: boolean
+                isAdmin:
+                  type: boolean
+                permissions:
+                  type: array
+                  items: {type: string}
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: Forbidden
+    delete:
+      tags:
+        - Auth
+      summary: 'Delete admin'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+        '403':
+          description: Forbidden
+  /api/v1/admin/auth/team:
+    get:
+      tags:
+        - Auth
+      summary: 'List admins'
+      responses:
+        '200':
+          description: OK
+    post:
+      tags:
+        - Auth
+      summary: 'Create admin'
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAdminRequest'
+      responses:
+        '201':
+          description: Created
+  '/api/v1/admin/auth/team/{id}':
+    patch:
+      tags:
+        - Auth
+      summary: 'Update admin'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                isSuperAdmin:
+                  type: boolean
+                isAdmin:
+                  type: boolean
+                permissions:
+                  type: array
+                  items: {type: string}
+                isActive:
+                  type: boolean
+      responses:
+        '200':
+          description: OK
+    delete:
+      tags:
+        - Auth
+      summary: 'Delete admin'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/dashboard:
+    get:
+      tags:
+        - Dashboard
+      summary: 'Dashboard overview'
+      parameters:
+        -
+          name: range
+          in: query
+          schema:
+            type: string
+            enum:
+              - 7d
+              - 30d
+              - 90d
+            default: 30d
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/orders:
+    get:
+      tags:
+        - Orders
+      summary: 'List orders'
+      parameters:
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        -
+          name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        -
+          name: search
+          in: query
+          schema:
+            type: string
+        -
+          name: fulfillmentStatus
+          in: query
+          schema:
+            type: string
+            enum:
+              - pending
+              - processing
+              - shipped
+              - delivered
+              - cancelled
+              - refunded
+        -
+          name: paymentStatus
+          in: query
+          schema:
+            type: string
+            enum:
+              - pending
+              - paid
+              - failed
+              - refunded
+              - partially_refunded
+        -
+          name: paymentMethod
+          in: query
+          schema:
+            type: string
+        -
+          name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        -
+          name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+        -
+          name: sortBy
+          in: query
+          schema:
+            type: string
+        -
+          name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+      responses:
+        '200':
+          description: OK
+    post:
+      tags:
+        - Orders
+      summary: 'Create order'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customerId
+                - customerName
+                - customerEmail
+                - items
+                - subtotal
+                - total
+              properties:
+                customerId:
+                  type: string
+                customerName:
+                  type: string
+                customerEmail:
+                  type: string
+                items:
+                  type: array
+                  items: {type: object}
+                subtotal:
+                  type: number
+                tax:
+                  type: number
+                shipping:
+                  type: number
+                discount:
+                  type: number
+                total:
+                  type: number
+                paymentMethod:
+                  type: string
+                shippingAddress:
+                  type: object
+                billingAddress:
+                  type: object
+      responses:
+        '201':
+          description: Created
+  /api/v1/admin/orders/bulk:
+    patch:
+      tags:
+        - Orders
+      summary: 'Bulk order actions'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ids
+                - action
+              properties:
+                ids:
+                  type: array
+                  items: {type: string}
+                action:
+                  type: string
+                  enum: [mark_shipped, cancel]
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/orders/{id}':
+    get:
+      tags:
+        - Orders
+      summary: 'Get order details'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+    delete:
+      tags:
+        - Orders
+      summary: 'Delete order'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/orders/{id}/status':
+    patch:
+      tags:
+        - Orders
+      summary: 'Update order status'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fulfillmentStatus:
+                  type: string
+                paymentStatus:
+                  type: string
+                note:
+                  type: string
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/orders/{id}/notes':
+    post:
+      tags:
+        - Orders
+      summary: 'Add internal note'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - note
+              properties:
+                note:
+                  type: string
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/orders/{id}/refund':
+    post:
+      tags:
+        - Orders
+      summary: 'Issue refund'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/products:
+    get:
+      tags:
+        - Products
+      summary: 'List products'
+      parameters:
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+        -
+          name: limit
+          in: query
+          schema:
+            type: integer
+        -
+          name: search
+          in: query
+          schema:
+            type: string
+        -
+          name: category
+          in: query
+          schema:
+            type: string
+        -
+          name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - active
+              - draft
+              - out_of_stock
+        -
+          name: stockStatus
+          in: query
+          schema:
+            type: string
+            enum:
+              - low
+              - out
+        -
+          name: minPrice
+          in: query
+          schema:
+            type: number
+        -
+          name: maxPrice
+          in: query
+          schema:
+            type: number
+        -
+          name: sortBy
+          in: query
+          schema:
+            type: string
+        -
+          name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+      responses:
+        '200':
+          description: OK
+    post:
+      tags:
+        - Products
+      summary: 'Create product'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - sku
+                - category
+                - price
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                sku:
+                  type: string
+                category:
+                  type: string
+                price:
+                  type: number
+                compareAtPrice:
+                  type: number
+                stock:
+                  type: integer
+                tags:
+                  type: array
+                  items: {type: string}
+                variants:
+                  type: array
+                  items: {type: object}
+                status:
+                  type: string
+                  enum: [active, draft, out_of_stock]
+      responses:
+        '201':
+          description: Created
+  /api/v1/admin/products/bulk/status:
+    patch:
+      tags:
+        - Products
+      summary: 'Bulk update product status'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ids
+                - status
+              properties:
+                ids:
+                  type: array
+                  items: {type: string}
+                status:
+                  type: string
+                  enum: [active, draft, out_of_stock]
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/products/{id}':
+    get:
+      tags:
+        - Products
+      summary: 'Get product by ID'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+    put:
+      tags:
+        - Products
+      summary: 'Update product'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Product'
+      responses:
+        '200':
+          description: OK
+    patch:
+      tags:
+        - Products
+      summary: 'Partially update product'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+    delete:
+      tags:
+        - Products
+      summary: 'Delete product'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/products/{id}/images':
+    post:
+      tags:
+        - Products
+      summary: 'Upload product images (local disk)'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                images:
+                  type: array
+                  items: {type: string, format: binary}
+      responses:
+        '200':
+          description: OK
+    delete:
+      tags:
+        - Products
+      summary: 'Remove a product image by URL'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - imageUrl
+              properties:
+                imageUrl:
+                  type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/customers:
+    get:
+      tags:
+        - Customers
+      summary: 'List customers'
+      parameters:
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+        -
+          name: limit
+          in: query
+          schema:
+            type: integer
+        -
+          name: search
+          in: query
+          schema:
+            type: string
+        -
+          name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - active
+              - blocked
+        -
+          name: sortBy
+          in: query
+          schema:
+            type: string
+        -
+          name: sortOrder
+          in: query
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+      responses:
+        '200':
+          description: OK
+    post:
+      tags:
+        - Customers
+      summary: 'Create customer'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - email
+              properties:
+                name:
+                  type: string
+                email:
+                  type: string
+                phone:
+                  type: string
+                addresses:
+                  type: array
+                  items: {type: object}
+      responses:
+        '201':
+          description: Created
+  '/api/v1/admin/customers/{id}':
+    get:
+      tags:
+        - Customers
+      summary: 'Customer details (profile, orders, refunds)'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+    put:
+      tags:
+        - Customers
+      summary: 'Update customer'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+    patch:
+      tags:
+        - Customers
+      summary: 'Partially update customer'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+    delete:
+      tags:
+        - Customers
+      summary: 'Delete customer'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/customers/{id}/block':
+    patch:
+      tags:
+        - Customers
+      summary: 'Block or unblock customer'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - blocked
+              properties:
+                blocked:
+                  type: boolean
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/customers/{id}/notes':
+    post:
+      tags:
+        - Customers
+      summary: 'Add customer note'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - note
+              properties:
+                note:
+                  type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/inventory:
+    get:
+      tags:
+        - Inventory
+      summary: 'Stock levels table'
+      parameters:
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+        -
+          name: limit
+          in: query
+          schema:
+            type: integer
+        -
+          name: search
+          in: query
+          schema:
+            type: string
+        -
+          name: stockLevel
+          in: query
+          schema:
+            type: string
+            enum:
+              - low
+              - out
+        -
+          name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/inventory/history:
+    get:
+      tags:
+        - Inventory
+      summary: 'Stock adjustment history'
+      parameters:
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+        -
+          name: limit
+          in: query
+          schema:
+            type: integer
+        -
+          name: productId
+          in: query
+          schema:
+            type: string
+        -
+          name: type
+          in: query
+          schema:
+            type: string
+            enum:
+              - restock
+              - sale
+              - adjustment
+              - return
+              - damage
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/inventory/{productId}/history':
+    get:
+      tags:
+        - Inventory
+      summary: 'Stock history for one product'
+      parameters:
+        -
+          name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/inventory/{productId}/restock':
+    post:
+      tags:
+        - Inventory
+      summary: 'Restock product'
+      parameters:
+        -
+          name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quantity
+              properties:
+                quantity:
+                  type: integer
+                  minimum: 1
+                note:
+                  type: string
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/inventory/{productId}/adjust':
+    post:
+      tags:
+        - Inventory
+      summary: 'Manual stock adjustment'
+      parameters:
+        -
+          name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quantityChange
+              properties:
+                quantityChange:
+                  type: integer
+                  description: 'Positive to add, negative to subtract'
+                type:
+                  type: string
+                  enum: [restock, sale, adjustment, return, damage]
+                note:
+                  type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/discounts:
+    get:
+      tags:
+        - Discounts
+      summary: 'List coupons'
+      parameters:
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+        -
+          name: limit
+          in: query
+          schema:
+            type: integer
+        -
+          name: search
+          in: query
+          schema:
+            type: string
+        -
+          name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - active
+              - expired
+              - scheduled
+        -
+          name: type
+          in: query
+          schema:
+            type: string
+            enum:
+              - percentage
+              - flat
+      responses:
+        '200':
+          description: OK
+    post:
+      tags:
+        - Discounts
+      summary: 'Create coupon'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+                - type
+                - value
+                - expiresAt
+              properties:
+                code:
+                  type: string
+                type:
+                  type: string
+                  enum: [percentage, flat]
+                value:
+                  type: number
+                usageLimit:
+                  type: integer
+                minOrderAmount:
+                  type: number
+                startsAt:
+                  type: string
+                  format: date-time
+                expiresAt:
+                  type: string
+                  format: date-time
+                description:
+                  type: string
+                applicableCategories:
+                  type: array
+                  items: {type: string}
+      responses:
+        '201':
+          description: Created
+  /api/v1/admin/discounts/validate:
+    post:
+      tags:
+        - Discounts
+      summary: 'Validate coupon code'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                orderTotal:
+                  type: number
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/discounts/{id}':
+    get:
+      tags:
+        - Discounts
+      summary: 'Get coupon by ID'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+    put:
+      tags:
+        - Discounts
+      summary: 'Update coupon'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Coupon'
+      responses:
+        '200':
+          description: OK
+    patch:
+      tags:
+        - Discounts
+      summary: 'Partially update coupon'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: OK
+    delete:
+      tags:
+        - Discounts
+      summary: 'Delete coupon'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/reviews:
+    get:
+      tags:
+        - Reviews
+      summary: 'List reviews'
+      parameters:
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+        -
+          name: limit
+          in: query
+          schema:
+            type: integer
+        -
+          name: search
+          in: query
+          schema:
+            type: string
+        -
+          name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - pending
+              - published
+              - flagged
+              - rejected
+        -
+          name: rating
+          in: query
+          schema:
+            type: integer
+        -
+          name: productId
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+    post:
+      tags:
+        - Reviews
+      summary: 'Create review'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - productId
+                - productName
+                - customerId
+                - customerName
+                - rating
+                - comment
+              properties:
+                productId:
+                  type: string
+                productName:
+                  type: string
+                customerId:
+                  type: string
+                customerName:
+                  type: string
+                rating:
+                  type: integer
+                comment:
+                  type: string
+      responses:
+        '201':
+          description: Created
+  '/api/v1/admin/reviews/product/{productId}':
+    get:
+      tags:
+        - Reviews
+      summary: 'Published reviews for a product'
+      parameters:
+        -
+          name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/reviews/{id}':
+    get:
+      tags:
+        - Reviews
+      summary: 'Get review by ID'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+    delete:
+      tags:
+        - Reviews
+      summary: 'Delete review'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/reviews/{id}/approve':
+    patch:
+      tags:
+        - Reviews
+      summary: 'Approve review'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/reviews/{id}/reject':
+    patch:
+      tags:
+        - Reviews
+      summary: 'Reject review'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/reviews/{id}/flag':
+    patch:
+      tags:
+        - Reviews
+      summary: 'Flag review'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/analytics:
+    get:
+      tags:
+        - Analytics
+      summary: 'Analytics overview'
+      parameters:
+        -
+          name: range
+          in: query
+          schema:
+            type: string
+            enum:
+              - 7d
+              - 30d
+              - 90d
+              - custom
+            default: 30d
+        -
+          name: startDate
+          in: query
+          schema:
+            type: string
+            format: date
+        -
+          name: endDate
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/analytics/export:
+    get:
+      tags:
+        - Analytics
+      summary: 'Export analytics report (mock)'
+      parameters:
+        -
+          name: range
+          in: query
+          schema:
+            type: string
+        -
+          name: format
+          in: query
+          schema:
+            type: string
+            enum:
+              - csv
+              - pdf
+            default: csv
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/notifications/settings:
+    get:
+      tags:
+        - Notifications
+      summary: 'Get notification preferences matrix'
+      responses:
+        '200':
+          description: OK
+    put:
+      tags:
+        - Notifications
+      summary: 'Update all notification settings'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                masterPushEnabled:
+                  type: boolean
+                preferences:
+                  type: array
+                  items: {type: object}
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/notifications/settings/{eventType}':
+    patch:
+      tags:
+        - Notifications
+      summary: 'Update one event preference'
+      parameters:
+        -
+          name: eventType
+          in: path
+          required: true
+          schema:
+            type: string
+            enum:
+              - new_order
+              - low_stock
+              - payment_failed
+              - new_review
+              - refund_requested
+              - daily_summary
+              - weekly_summary
+              - new_signup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                channels:
+                  type: object
+                  properties: {push: {type: boolean}, email: {type: boolean}, in_app: {type: boolean}}
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/notifications/history:
+    get:
+      tags:
+        - Notifications
+      summary: 'Notification history log'
+      parameters:
+        -
+          name: page
+          in: query
+          schema:
+            type: integer
+        -
+          name: limit
+          in: query
+          schema:
+            type: integer
+        -
+          name: read
+          in: query
+          schema:
+            type: string
+            enum:
+              - 'true'
+              - 'false'
+        -
+          name: type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/notifications/history/read-all:
+    patch:
+      tags:
+        - Notifications
+      summary: 'Mark all notifications as read'
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/notifications/history/{id}/read':
+    patch:
+      tags:
+        - Notifications
+      summary: 'Mark one notification as read'
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/settings:
+    get:
+      tags:
+        - Settings
+      summary: 'Get all settings (store, payments, shipping)'
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/settings/store:
+    get:
+      tags:
+        - Settings
+      summary: 'Get store profile'
+      responses:
+        '200':
+          description: OK
+    put:
+      tags:
+        - Settings
+      summary: 'Update store profile'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                contactEmail:
+                  type: string
+                contactPhone:
+                  type: string
+                currency:
+                  type: string
+                timezone:
+                  type: string
+                address:
+                  type: object
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/settings/store/logo:
+    post:
+      tags:
+        - Settings
+      summary: 'Upload store logo (local disk)'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                images:
+                  type: array
+                  items: {type: string, format: binary}
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/settings/payments:
+    get:
+      tags:
+        - Settings
+      summary: 'Get payment gateway settings'
+      responses:
+        '200':
+          description: OK
+    put:
+      tags:
+        - Settings
+      summary: 'Update payment gateways'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gateways:
+                  type: array
+                  items: {type: object}
+      responses:
+        '200':
+          description: OK
+  '/api/v1/admin/settings/payments/{gateway}':
+    patch:
+      tags:
+        - Settings
+      summary: 'Enable/disable a payment gateway'
+      parameters:
+        -
+          name: gateway
+          in: path
+          required: true
+          schema:
+            type: string
+            example: stripe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - enabled
+              properties:
+                enabled:
+                  type: boolean
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/settings/shipping:
+    get:
+      tags:
+        - Settings
+      summary: 'Get shipping settings'
+      responses:
+        '200':
+          description: OK
+    put:
+      tags:
+        - Settings
+      summary: 'Update shipping zones and rates'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                defaultRate:
+                  type: number
+                freeShippingThreshold:
+                  type: number
+                zones:
+                  type: array
+                  items: {type: object}
+      responses:
+        '200':
+          description: OK
+  /api/v1/admin/settings/export:
+    get:
+      tags:
+        - Settings
+      summary: 'Export store data (mock)'
+      responses:
+        '200':
+          description: OK
